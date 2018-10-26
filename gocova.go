@@ -22,10 +22,12 @@ var (
 		cli.StringFlag{
 			Name:  "output, o",
 			Usage: "output image path base",
+			Value: "./result",
 		},
 		cli.IntFlag{
 			Name:  "pattern, p",
 			Usage: "number of images to generate",
+			Value: 6,
 		},
 	}
 )
