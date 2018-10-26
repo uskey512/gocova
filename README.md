@@ -10,7 +10,8 @@ It generates images of multiple patterns from one image.
 `$ go get -u github.com/uskey512/gocova`  
 
 ## Usage  
-`$ gocova -i {input file path} -o {output file path} -p {number of images to generate}`
+`$ gocova -i {input file path} -o {output file path} -p {number of images to generate}`  
+(Input and output should be in png format.)
 
 
 ## Author
