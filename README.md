@@ -2,6 +2,7 @@
 gocova is various color image generator.  
 It generates images of multiple patterns from one image.  
 
+<img width="874" alt="" src="https://user-images.githubusercontent.com/4005383/47588820-5b084c80-d9a2-11e8-891e-49aed3ff3323.png">
 
 
 
