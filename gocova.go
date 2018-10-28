@@ -16,10 +16,6 @@ import (
 var (
 	flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "input, i",
-			Usage: "input image path",
-		},
-		cli.StringFlag{
 			Name:  "output, o",
 			Usage: "output image path base",
 			Value: "./result",
@@ -119,7 +115,7 @@ func generateImage(srcImage image.Image, dstPath string, offset HslOffset) {
 }
 
 func process(c *cli.Context) {
-	image := loadImage(c.String("input"))
+	image := loadImage(c.Args().Get(0))
 	dstPath := c.String("output")
 
 	pattern := c.Int("pattern")
