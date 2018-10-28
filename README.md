@@ -11,14 +11,17 @@ It generates images of multiple patterns from one image.
 
 ## Usage  
 `$ gocova -i {input file path} -o {output file path} -p {number of images to generate}`  
+
 ```
 Options:
-   --input value, -i value    input image path
-   --output value, -o value   output image path base (default: "./result")
-   --pattern value, -p value  number of images to generate (default: 6)
+   --input value, -i value       input image path
+   --output value, -o value      output image path base (default: "./result")
+   --pattern value, -p value     number of images to generate (default: 10)
+   --saturation value, -s value  saturation offset [-100.0...100.0] (default: 0)
+   --lightness value, -l value   lightness offset [-100.0...100.0] (default: 0)
 ```
 
-(Input and output should be in png format.)
+(Input and output should be in png format)
 
 
 ## Author

@@ -29,22 +29,47 @@ var (
 			Usage: "number of images to generate",
 			Value: 10,
 		},
-		cli.Int64Flag{
+		cli.Float64Flag{
 			Name:  "saturation, s",
-			Usage: "color saturation offset [-100...100]",
+			Usage: "saturation offset [-100.0...100.0]",
+			Value: 0,
+		},
+		cli.Float64Flag{
+			Name:  "lightness, l",
+			Usage: "lightness offset [-100.0...100.0]",
 			Value: 0,
 		},
 	}
 )
 
-func clamp01(v float64) float64 {
-	if 1.0 < v {
-		return 1.0
+type HslOffset struct {
+	h, s, l float64
+}
+
+func clamp(v, max, min float64) float64 {
+	if max < v {
+		return max
 	}
-	if v < 0.0 {
-		return 0.0
+	if v < min {
+		return min
 	}
 	return v
+}
+
+func clamp01(v float64) float64 {
+	return clamp(v, 1.0, 0.0)
+}
+
+func getCarry(v int) int {
+	c := 0
+	for ; v != 0; c++ {
+		v /= 10
+	}
+	return c
+}
+
+func getDstPathBase(pathbase string, pattern int) string {
+	return fmt.Sprintf("%s_%%0%dd.png", pathbase, getCarry(pattern))
 }
 
 func loadImage(inputImage string) image.Image {
@@ -62,7 +87,7 @@ func loadImage(inputImage string) image.Image {
 	return srcImage
 }
 
-func generateImage(srcImage image.Image, dstPath string, rotation int, colorSaturation float64) {
+func generateImage(srcImage image.Image, dstPath string, offset HslOffset) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
@@ -74,19 +99,20 @@ func generateImage(srcImage image.Image, dstPath string, rotation int, colorSatu
 
 	for y := srcBounds.Min.Y; y < srcBounds.Max.Y; y++ {
 		for x := srcBounds.Min.X; x < srcBounds.Max.X; x++ {
-			orgColor := srcImage.At(x, y)
+			orgColor := srcImage.At(x, y).(color.NRGBA)
 
 			colorfulColor, _ := colorful.MakeColor(orgColor)
-			h, s, v := colorfulColor.Hsl()
+			h, s, l := colorfulColor.Hsl()
 
-			h = math.Mod(h+float64(rotation), 360.0)
-			s = clamp01(s + colorSaturation)
-			resultHsv := colorful.Hsl(h, s, v)
+			h = math.Mod(h+float64(offset.h), 360.0)
+			s = clamp01(s + offset.s)
+			l = clamp01(l + offset.l)
+
+			resultHsv := colorful.Hsl(h, s, l)
 
 			r, g, b := resultHsv.RGB255()
-			_, _, _, a := orgColor.RGBA()
 
-			filteredImage.Set(x, y, color.RGBA{r, g, b, uint8(a)})
+			filteredImage.Set(x, y, color.NRGBA{r, g, b, orgColor.A})
 		}
 	}
 	png.Encode(dstFile, image.Image(filteredImage))
@@ -95,13 +121,19 @@ func generateImage(srcImage image.Image, dstPath string, rotation int, colorSatu
 func process(c *cli.Context) {
 	image := loadImage(c.String("input"))
 	dstPath := c.String("output")
-	pattern := c.Int("pattern")
-	colorSaturation := c.Int("saturation")
-	hslDegree := 360 / (pattern + 1)
 
+	pattern := c.Int("pattern")
+	hInterval := float64(360 / (pattern + 1))
+	saturation := clamp(c.Float64("saturation"), 100.0, -100.0) / 100.0
+	lightness := clamp(c.Float64("lightness"), 100.0, -100.0) / 100.0
+
+	offset := HslOffset{hInterval, saturation, lightness}
+
+	dstFilePathBase := getDstPathBase(dstPath, pattern)
 	for i := 1; i <= pattern; i++ {
-		dstFilePath := fmt.Sprintf("%s_%03d.png", dstPath, i)
-		generateImage(image, dstFilePath, i*hslDegree, float64(colorSaturation)/100.0)
+		dstFilePath := fmt.Sprintf(dstFilePathBase, i)
+		offset.h = hInterval * float64(i)
+		generateImage(image, dstFilePath, offset)
 	}
 }
 
@@ -110,7 +142,7 @@ func main() {
 
 	app.Name = "gocova"
 	app.Usage = "Go color variation, generate images of various colors"
-	app.Version = "1.0.0"
+	app.Version = "1.1.0"
 
 	app.Action = process
 	app.Flags = flags
