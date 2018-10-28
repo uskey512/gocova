@@ -9,7 +9,7 @@ It generates images of multiple patterns from one image.
 
 ## Usage  
 ```
-gocova <input file> [options]  
+gocova　[options] <input>　　
 
 Options:
    --output value, -o value      output image path base (default: "./result")
@@ -18,7 +18,7 @@ Options:
    --lightness value, -l value   lightness offset [-100.0...100.0] (default: 0)
 ```
 
-(Input and output should be in png format)
+(input file should be in png format)
 
 ## Author
 Yusuke Uehara (@uskey512)
