@@ -40,7 +40,7 @@ var (
 	}
 )
 
-type HslOffset struct {
+type hslOffset struct {
 	h, s, l float64
 }
 
@@ -85,7 +85,7 @@ func loadImage(inputImage string) (image.Image, string) {
 	return srcImage, format
 }
 
-func generateImage(srcImage image.Image, format, dstPath string, offset HslOffset) {
+func generateImage(srcImage image.Image, format, dstPath string, offset hslOffset) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
@@ -140,7 +140,11 @@ func process(c *cli.Context) {
 	saturation := clamp(c.Float64("saturation"), 100.0, -100.0) / 100.0
 	lightness := clamp(c.Float64("lightness"), 100.0, -100.0) / 100.0
 
-	offset := HslOffset{hInterval, saturation, lightness}
+	offset := hslOffset{
+		h: hInterval,
+		s: saturation,
+		l: lightness,
+	}
 
 	dstFilePathBase := getDstPathBase(dstPath, format, pattern)
 	for i := 1; i <= pattern; i++ {
