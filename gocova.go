@@ -39,12 +39,12 @@ var (
 		},
 		cli.BoolFlag{
 			Name:  "grayscale, g",
-			Usage: "input image is grayscale\n\tsaturation of fixed value : 50",
+			Usage: "input image is grayscale\n\tsaturation of fixed value : [50.0]",
 		},
 	}
 )
 
-type hslOffset struct {
+type hslOption struct {
 	h, s, l float64
 	g       bool
 }
@@ -90,7 +90,7 @@ func loadImage(inputImage string) (image.Image, string) {
 	return srcImage, format
 }
 
-func generateImage(srcImage image.Image, format, dstPath string, offset hslOffset) {
+func generateImage(srcImage image.Image, format, dstPath string, offset hslOption) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
@@ -150,7 +150,7 @@ func process(c *cli.Context) {
 	lightness := clamp(c.Float64("lightness"), 100.0, -100.0) / 100.0
 	grayscale := c.Bool("grayscale")
 
-	offset := hslOffset{
+	offset := hslOption{
 		h: hInterval,
 		s: saturation,
 		l: lightness,
