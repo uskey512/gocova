@@ -37,11 +37,16 @@ var (
 			Usage: "lightness offset [-100.0...100.0]",
 			Value: 0,
 		},
+		cli.BoolFlag{
+			Name:  "grayscale, g",
+			Usage: "input image is grayscale\n\tsaturation of fixed value : 50",
+		},
 	}
 )
 
 type hslOffset struct {
 	h, s, l float64
+	g       bool
 }
 
 func clamp(v, max, min float64) float64 {
@@ -106,6 +111,10 @@ func generateImage(srcImage image.Image, format, dstPath string, offset hslOffse
 			s = clamp01(s + offset.s)
 			l = clamp01(l + offset.l)
 
+			if offset.g {
+				s = 0.5
+			}
+
 			resultHsv := colorful.Hsl(h, s, l)
 
 			r, g, b := resultHsv.RGB255()
@@ -139,11 +148,13 @@ func process(c *cli.Context) {
 	hInterval := float64(360 / (pattern + 1))
 	saturation := clamp(c.Float64("saturation"), 100.0, -100.0) / 100.0
 	lightness := clamp(c.Float64("lightness"), 100.0, -100.0) / 100.0
+	grayscale := c.Bool("grayscale")
 
 	offset := hslOffset{
 		h: hInterval,
 		s: saturation,
 		l: lightness,
+		g: grayscale,
 	}
 
 	dstFilePathBase := getDstPathBase(dstPath, format, pattern)
