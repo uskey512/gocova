@@ -35,7 +35,7 @@ $ gocova -s -40 source.png
 <img width="500" alt="s-40" src="https://user-images.githubusercontent.com/4005383/47617662-c3733d00-db0c-11e8-984f-a28bead1efce.png">
 
 ## Thanks
-http://pictogram2.com/
+http://pictogram2.com/?lang=en
 
 ## Author
 Yusuke Uehara (@uskey512)
