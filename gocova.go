@@ -27,10 +27,25 @@ var (
 		cli.IntFlag{
 			Name:  "pattern, p",
 			Usage: "number of images to generate",
-			Value: 6,
+			Value: 10,
+		},
+		cli.Int64Flag{
+			Name:  "saturation, s",
+			Usage: "color saturation offset [-100...100]",
+			Value: 0,
 		},
 	}
 )
+
+func clamp01(v float64) float64 {
+	if 1.0 < v {
+		return 1.0
+	}
+	if v < 0.0 {
+		return 0.0
+	}
+	return v
+}
 
 func loadImage(inputImage string) image.Image {
 	reader, err := os.Open(inputImage)
@@ -47,7 +62,7 @@ func loadImage(inputImage string) image.Image {
 	return srcImage
 }
 
-func generateImage(srcImage image.Image, dstPath string, rotation int) {
+func generateImage(srcImage image.Image, dstPath string, rotation int, colorSaturation float64) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
@@ -62,10 +77,11 @@ func generateImage(srcImage image.Image, dstPath string, rotation int) {
 			orgColor := srcImage.At(x, y)
 
 			colorfulColor, _ := colorful.MakeColor(orgColor)
-			h, s, v := colorfulColor.Hsv()
+			h, s, v := colorfulColor.Hsl()
 
 			h = math.Mod(h+float64(rotation), 360.0)
-			resultHsv := colorful.Hsv(h, s, v)
+			s = clamp01(s + colorSaturation)
+			resultHsv := colorful.Hsl(h, s, v)
 
 			r, g, b := resultHsv.RGB255()
 			_, _, _, a := orgColor.RGBA()
@@ -80,11 +96,12 @@ func process(c *cli.Context) {
 	image := loadImage(c.String("input"))
 	dstPath := c.String("output")
 	pattern := c.Int("pattern")
+	colorSaturation := c.Int("saturation")
 	hslDegree := 360 / (pattern + 1)
 
 	for i := 1; i <= pattern; i++ {
 		dstFilePath := fmt.Sprintf("%s_%03d.png", dstPath, i)
-		generateImage(image, dstFilePath, i*hslDegree)
+		generateImage(image, dstFilePath, i*hslDegree, float64(colorSaturation)/100.0)
 	}
 }
 
