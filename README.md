@@ -22,15 +22,18 @@ Input file should be in png format.
 In gocova, converting from RGB to HSL internally.  
 ( see https://en.wikipedia.org/wiki/HSL_and_HSV )
 
-#### -l, --lightness
+### -l, --lightness
 ```
 $ gocova -l 30 source.png
 ```
+<img width="500" alt="l30" src="https://user-images.githubusercontent.com/4005383/47617653-ae96a980-db0c-11e8-99eb-b1c24180904b.png">
 
-#### -s, --saturation
+### -s, --saturation
 ```
 $ gocova -s -40 source.png
 ```
+<img width="500" alt="s-40" src="https://user-images.githubusercontent.com/4005383/47617662-c3733d00-db0c-11e8-984f-a28bead1efce.png">
+
 
 ## Author
 Yusuke Uehara (@uskey512)
