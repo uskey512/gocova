@@ -111,7 +111,7 @@ func generateImage(srcImage image.Image, format, dstPath string, offset hslOffse
 			r, g, b := resultHsv.RGB255()
 
 			if format == "png" {
-				filteredImage.Set(x, y, color.RGBA{r, g, b, orgColor.(color.NRGBA).A})
+				filteredImage.Set(x, y, color.NRGBA{r, g, b, orgColor.(color.NRGBA).A})
 			} else {
 				filteredImage.Set(x, y, color.RGBA{r, g, b, 255})
 			}
