@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
 	"log"
 	"math"
@@ -64,26 +66,26 @@ func getCarry(v int) int {
 	return c
 }
 
-func getDstPathBase(pathbase string, pattern int) string {
-	return fmt.Sprintf("%s_%%0%dd.png", pathbase, getCarry(pattern))
+func getDstPathBase(pathbase string, ext string, pattern int) string {
+	return fmt.Sprintf("%s_%%0%dd.%s", pathbase, getCarry(pattern), ext)
 }
 
-func loadImage(inputImage string) image.Image {
+func loadImage(inputImage string) (image.Image, string) {
 	reader, err := os.Open(inputImage)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer reader.Close()
 
-	srcImage, _, err := image.Decode(reader)
+	srcImage, format, err := image.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return srcImage
+	return srcImage, format
 }
 
-func generateImage(srcImage image.Image, dstPath string, offset HslOffset) {
+func generateImage(srcImage image.Image, format, dstPath string, offset HslOffset) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
@@ -95,7 +97,7 @@ func generateImage(srcImage image.Image, dstPath string, offset HslOffset) {
 
 	for y := srcBounds.Min.Y; y < srcBounds.Max.Y; y++ {
 		for x := srcBounds.Min.X; x < srcBounds.Max.X; x++ {
-			orgColor := srcImage.At(x, y).(color.NRGBA)
+			orgColor := srcImage.At(x, y)
 
 			colorfulColor, _ := colorful.MakeColor(orgColor)
 			h, s, l := colorfulColor.Hsl()
@@ -108,14 +110,28 @@ func generateImage(srcImage image.Image, dstPath string, offset HslOffset) {
 
 			r, g, b := resultHsv.RGB255()
 
-			filteredImage.Set(x, y, color.NRGBA{r, g, b, orgColor.A})
+			if format == "png" {
+				filteredImage.Set(x, y, color.RGBA{r, g, b, orgColor.(color.NRGBA).A})
+			} else {
+				filteredImage.Set(x, y, color.RGBA{r, g, b, 255})
+			}
 		}
 	}
-	png.Encode(dstFile, image.Image(filteredImage))
+	switch format {
+	case "png":
+		png.Encode(dstFile, image.Image(filteredImage))
+		break
+	case "jpeg":
+		jpeg.Encode(dstFile, image.Image(filteredImage), nil)
+		break
+	case "gif":
+		gif.Encode(dstFile, image.Image(filteredImage), nil)
+		break
+	}
 }
 
 func process(c *cli.Context) {
-	image := loadImage(c.Args().Get(0))
+	image, format := loadImage(c.Args().Get(0))
 	dstPath := c.String("output")
 
 	pattern := c.Int("pattern")
@@ -125,11 +141,11 @@ func process(c *cli.Context) {
 
 	offset := HslOffset{hInterval, saturation, lightness}
 
-	dstFilePathBase := getDstPathBase(dstPath, pattern)
+	dstFilePathBase := getDstPathBase(dstPath, format, pattern)
 	for i := 1; i <= pattern; i++ {
 		dstFilePath := fmt.Sprintf(dstFilePathBase, i)
 		offset.h = hInterval * float64(i)
-		generateImage(image, dstFilePath, offset)
+		generateImage(image, format, dstFilePath, offset)
 	}
 }
 
@@ -138,7 +154,7 @@ func main() {
 
 	app.Name = "gocova"
 	app.Usage = "Go color variation, generate images of various colors"
-	app.Version = "1.1.0"
+	app.Version = "1.2.0"
 
 	app.Action = process
 	app.Flags = flags
