@@ -29,12 +29,12 @@ var (
 		},
 		cli.Float64Flag{
 			Name:  "saturation, s",
-			Usage: "saturation offset [-100.0...100.0]",
+			Usage: "saturation offset [-100.0 ... 100.0]",
 			Value: 0,
 		},
 		cli.Float64Flag{
 			Name:  "lightness, l",
-			Usage: "lightness offset [-100.0...100.0]",
+			Usage: "lightness offset [-100.0 ... 100.0]",
 			Value: 0,
 		},
 		cli.BoolFlag{
@@ -170,7 +170,7 @@ func main() {
 
 	app.Name = "gocova"
 	app.Usage = "Go color variation, generate images of various colors"
-	app.Version = "1.2.0"
+	app.Version = "1.3.0"
 
 	app.Action = process
 	app.Flags = flags

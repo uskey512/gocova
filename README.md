@@ -11,11 +11,13 @@ It generates images of multiple patterns from one image.
 ```
 gocova　[options] <input>　　
 
-Options:
+options:
    --output value, -o value      output image path base (default: "./result")
    --pattern value, -p value     number of images to generate (default: 10)
    --saturation value, -s value  saturation offset [-100.0 ... 100.0] (default: 0)
    --lightness value, -l value   lightness offset [-100.0 ... 100.0] (default: 0)
+   --grayscale, -g               input image is grayscale
+                                 saturation is fixed value : [50.0]
 ```
 Supported formats : png, jpeg, gif  
 
