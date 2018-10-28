@@ -117,6 +117,7 @@ func generateImage(srcImage image.Image, format, dstPath string, offset HslOffse
 			}
 		}
 	}
+
 	switch format {
 	case "png":
 		png.Encode(dstFile, image.Image(filteredImage))

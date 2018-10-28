@@ -17,7 +17,7 @@ Options:
    --saturation value, -s value  saturation offset [-100.0 ... 100.0] (default: 0)
    --lightness value, -l value   lightness offset [-100.0 ... 100.0] (default: 0)
 ```
-Input file should be in png format.
+Supported formats : png, jpeg, gif  
 
 In gocova, converting from RGB to HSL internally.  
 ( see https://en.wikipedia.org/wiki/HSL_and_HSV )
