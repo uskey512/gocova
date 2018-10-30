@@ -50,11 +50,17 @@ type hslOption struct {
 	g       bool
 }
 
+type imageFile struct {
+	image  image.Image
+	format string
+	bounds image.Rectangle
+}
+
 func getDstPathBase(pathbase string, ext string, pattern int) string {
 	return fmt.Sprintf("%s_%%0%dd.%s", pathbase, len(strconv.Itoa(pattern)), ext)
 }
 
-func loadImage(inputImage string) (image.Image, string) {
+func readImage(inputImage string) imageFile {
 	reader, err := os.Open(inputImage)
 	if err != nil {
 		log.Fatal(err)
@@ -66,22 +72,39 @@ func loadImage(inputImage string) (image.Image, string) {
 		log.Fatal(err)
 	}
 
-	return srcImage, format
+	return imageFile{
+		image:  srcImage,
+		format: format,
+		bounds: srcImage.Bounds(),
+	}
 }
 
-func generateImage(srcImage image.Image, format, dstPath string, offset hslOption) {
+func writeImage(dst imageFile, dstPath string) {
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dstFile.Close()
 
-	srcBounds := srcImage.Bounds()
-	filteredImage := image.NewRGBA(srcBounds)
+	switch dst.format {
+	case "png":
+		png.Encode(dstFile, image.Image(dst.image))
+		break
+	case "jpeg":
+		jpeg.Encode(dstFile, image.Image(dst.image), nil)
+		break
+	case "gif":
+		gif.Encode(dstFile, image.Image(dst.image), nil)
+		break
+	}
+}
 
-	for y := srcBounds.Min.Y; y < srcBounds.Max.Y; y++ {
-		for x := srcBounds.Min.X; x < srcBounds.Max.X; x++ {
-			orgColor := srcImage.At(x, y)
+func generateImage(src imageFile, offset hslOption) imageFile {
+	filteredImage := image.NewRGBA(src.bounds)
+
+	for y := src.bounds.Min.Y; y < src.bounds.Max.Y; y++ {
+		for x := src.bounds.Min.X; x < src.bounds.Max.X; x++ {
+			orgColor := src.image.At(x, y)
 
 			colorfulColor, _ := colorful.MakeColor(orgColor)
 			h, s, l := colorfulColor.Hsl()
@@ -98,7 +121,7 @@ func generateImage(srcImage image.Image, format, dstPath string, offset hslOptio
 
 			r, g, b := resultHsv.RGB255()
 
-			if format == "png" {
+			if src.format == "png" {
 				filteredImage.Set(x, y, color.NRGBA{r, g, b, orgColor.(color.NRGBA).A})
 			} else {
 				filteredImage.Set(x, y, color.RGBA{r, g, b, 255})
@@ -106,25 +129,19 @@ func generateImage(srcImage image.Image, format, dstPath string, offset hslOptio
 		}
 	}
 
-	switch format {
-	case "png":
-		png.Encode(dstFile, image.Image(filteredImage))
-		break
-	case "jpeg":
-		jpeg.Encode(dstFile, image.Image(filteredImage), nil)
-		break
-	case "gif":
-		gif.Encode(dstFile, image.Image(filteredImage), nil)
-		break
+	return imageFile{
+		image:  filteredImage,
+		format: src.format,
+		bounds: src.bounds,
 	}
 }
 
 func process(c *cli.Context) {
-	image, format := loadImage(c.Args().Get(0))
+	src := readImage(c.Args().Get(0))
 	dstPath := c.String("output")
 
 	pattern := c.Int("pattern")
-	hInterval := float64(360 / (pattern + 1))
+	hInterval := float64(360.0 / (pattern + 1))
 	saturation := Clamp(c.Float64("saturation"), -100.0, 100.0) / 100.0
 	lightness := Clamp(c.Float64("lightness"), -100.0, 100.0) / 100.0
 	grayscale := c.Bool("grayscale")
@@ -136,11 +153,12 @@ func process(c *cli.Context) {
 		g: grayscale,
 	}
 
-	dstFilePathBase := getDstPathBase(dstPath, format, pattern)
+	dstFilePathBase := getDstPathBase(dstPath, src.format, pattern)
 	for i := 1; i <= pattern; i++ {
 		dstFilePath := fmt.Sprintf(dstFilePathBase, i)
 		offset.h = hInterval * float64(i)
-		generateImage(image, format, dstFilePath, offset)
+		filterdImageFile := generateImage(src, offset)
+		writeImage(filterdImageFile, dstFilePath)
 	}
 }
 
