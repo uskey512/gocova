@@ -38,10 +38,6 @@ var (
 			Usage: "lightness offset [-100.0 ... 100.0]",
 			Value: 0,
 		},
-		cli.BoolFlag{
-			Name:  "grayscale, g",
-			Usage: "input image is grayscale\n\tsaturation of fixed value : [50.0]",
-		},
 	}
 )
 
@@ -49,7 +45,9 @@ type filter struct {
 	hue        float64
 	saturation float64
 	lightness  float64
-	g          bool
+
+	isGrayscale bool
+	isBitonal   bool
 }
 
 type imageFile struct {
@@ -101,7 +99,7 @@ func writeImage(dst imageFile, dstPath string) {
 	}
 }
 
-func generateImage(src *imageFile, offset filter) imageFile {
+func filterImage(src *imageFile, filter filter) imageFile {
 	filteredImage := image.NewRGBA(src.bounds)
 
 	for y := src.bounds.Min.Y; y < src.bounds.Max.Y; y++ {
@@ -111,12 +109,15 @@ func generateImage(src *imageFile, offset filter) imageFile {
 			colorfulColor, _ := colorful.MakeColor(orgColor)
 			h, s, l := colorfulColor.Hsl()
 
-			h = math.Mod(h+float64(offset.hue), 360.0)
-			s = Clamp01(s + offset.saturation)
-			l = Clamp01(l + offset.lightness)
+			h = math.Mod(h+float64(filter.hue), 360.0)
+			s = Clamp01(s + filter.saturation)
+			l = Clamp01(l + filter.lightness)
 
-			if offset.g {
+			if filter.isGrayscale {
 				s = 0.5
+			}
+			if filter.isBitonal {
+				l = 0.5
 			}
 
 			resultHsv := colorful.Hsl(h, s, l)
@@ -143,13 +144,11 @@ func parseFilter(c *cli.Context) (filter, int) {
 	h := float64(360.0 / (pattern + 1))
 	s := Clamp(c.Float64("saturation"), -100.0, 100.0) / 100.0
 	l := Clamp(c.Float64("lightness"), -100.0, 100.0) / 100.0
-	g := c.Bool("grayscale")
 
 	return filter{
 		hue:        h,
 		saturation: s,
 		lightness:  l,
-		g:          g,
 	}, pattern
 }
 
@@ -159,12 +158,15 @@ func process(c *cli.Context) {
 	filter, pattern := parseFilter(c)
 	hueInterval := filter.hue
 
+	filter.isBitonal = bitonalDetect(src)
+	filter.isGrayscale = grayscaleDetect(src)
+
 	dstFilePathBase := getDstPathBase(dstPath, src.format, pattern)
 	for i := 1; i <= pattern; i++ {
 		dstFilePath := fmt.Sprintf(dstFilePathBase, i)
 		filter.hue = hueInterval * float64(i)
 
-		writeImage(generateImage(&src, filter), dstFilePath)
+		writeImage(filterImage(&src, filter), dstFilePath)
 	}
 }
 
@@ -173,7 +175,7 @@ func main() {
 
 	app.Name = "gocova"
 	app.Usage = "Go color variation, generate images of various colors"
-	app.Version = "1.3.0"
+	app.Version = "1.4.0"
 
 	app.Action = process
 	app.Flags = flags
