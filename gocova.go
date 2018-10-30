@@ -50,20 +50,6 @@ type hslOption struct {
 	g       bool
 }
 
-func clamp(v, max, min float64) float64 {
-	if max < v {
-		return max
-	}
-	if v < min {
-		return min
-	}
-	return v
-}
-
-func clamp01(v float64) float64 {
-	return clamp(v, 1.0, 0.0)
-}
-
 func getDstPathBase(pathbase string, ext string, pattern int) string {
 	return fmt.Sprintf("%s_%%0%dd.%s", pathbase, len(strconv.Itoa(pattern)), ext)
 }
@@ -101,8 +87,8 @@ func generateImage(srcImage image.Image, format, dstPath string, offset hslOptio
 			h, s, l := colorfulColor.Hsl()
 
 			h = math.Mod(h+float64(offset.h), 360.0)
-			s = clamp01(s + offset.s)
-			l = clamp01(l + offset.l)
+			s = Clamp01(s + offset.s)
+			l = Clamp01(l + offset.l)
 
 			if offset.g {
 				s = 0.5
@@ -139,8 +125,8 @@ func process(c *cli.Context) {
 
 	pattern := c.Int("pattern")
 	hInterval := float64(360 / (pattern + 1))
-	saturation := clamp(c.Float64("saturation"), 100.0, -100.0) / 100.0
-	lightness := clamp(c.Float64("lightness"), 100.0, -100.0) / 100.0
+	saturation := Clamp(c.Float64("saturation"), -100.0, 100.0) / 100.0
+	lightness := Clamp(c.Float64("lightness"), -100.0, 100.0) / 100.0
 	grayscale := c.Bool("grayscale")
 
 	offset := hslOption{
