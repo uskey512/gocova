@@ -10,6 +10,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"strconv"
 
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/urfave/cli"
@@ -63,16 +64,8 @@ func clamp01(v float64) float64 {
 	return clamp(v, 1.0, 0.0)
 }
 
-func getCarry(v int) int {
-	c := 0
-	for ; v != 0; c++ {
-		v /= 10
-	}
-	return c
-}
-
 func getDstPathBase(pathbase string, ext string, pattern int) string {
-	return fmt.Sprintf("%s_%%0%dd.%s", pathbase, getCarry(pattern), ext)
+	return fmt.Sprintf("%s_%%0%dd.%s", pathbase, len(strconv.Itoa(pattern)), ext)
 }
 
 func loadImage(inputImage string) (image.Image, string) {
