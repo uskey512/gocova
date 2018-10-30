@@ -45,9 +45,11 @@ var (
 	}
 )
 
-type hslOption struct {
-	h, s, l float64
-	g       bool
+type filter struct {
+	hue        float64
+	saturation float64
+	lightness  float64
+	g          bool
 }
 
 type imageFile struct {
@@ -99,7 +101,7 @@ func writeImage(dst imageFile, dstPath string) {
 	}
 }
 
-func generateImage(src imageFile, offset hslOption) imageFile {
+func generateImage(src *imageFile, offset filter) imageFile {
 	filteredImage := image.NewRGBA(src.bounds)
 
 	for y := src.bounds.Min.Y; y < src.bounds.Max.Y; y++ {
@@ -109,9 +111,9 @@ func generateImage(src imageFile, offset hslOption) imageFile {
 			colorfulColor, _ := colorful.MakeColor(orgColor)
 			h, s, l := colorfulColor.Hsl()
 
-			h = math.Mod(h+float64(offset.h), 360.0)
-			s = Clamp01(s + offset.s)
-			l = Clamp01(l + offset.l)
+			h = math.Mod(h+float64(offset.hue), 360.0)
+			s = Clamp01(s + offset.saturation)
+			l = Clamp01(l + offset.lightness)
 
 			if offset.g {
 				s = 0.5
@@ -136,29 +138,33 @@ func generateImage(src imageFile, offset hslOption) imageFile {
 	}
 }
 
+func parseFilter(c *cli.Context) (filter, int) {
+	pattern := c.Int("pattern")
+	h := float64(360.0 / (pattern + 1))
+	s := Clamp(c.Float64("saturation"), -100.0, 100.0) / 100.0
+	l := Clamp(c.Float64("lightness"), -100.0, 100.0) / 100.0
+	g := c.Bool("grayscale")
+
+	return filter{
+		hue:        h,
+		saturation: s,
+		lightness:  l,
+		g:          g,
+	}, pattern
+}
+
 func process(c *cli.Context) {
 	src := readImage(c.Args().Get(0))
 	dstPath := c.String("output")
-
-	pattern := c.Int("pattern")
-	hInterval := float64(360.0 / (pattern + 1))
-	saturation := Clamp(c.Float64("saturation"), -100.0, 100.0) / 100.0
-	lightness := Clamp(c.Float64("lightness"), -100.0, 100.0) / 100.0
-	grayscale := c.Bool("grayscale")
-
-	offset := hslOption{
-		h: hInterval,
-		s: saturation,
-		l: lightness,
-		g: grayscale,
-	}
+	filter, pattern := parseFilter(c)
+	hueInterval := filter.hue
 
 	dstFilePathBase := getDstPathBase(dstPath, src.format, pattern)
 	for i := 1; i <= pattern; i++ {
 		dstFilePath := fmt.Sprintf(dstFilePathBase, i)
-		offset.h = hInterval * float64(i)
-		filterdImageFile := generateImage(src, offset)
-		writeImage(filterdImageFile, dstFilePath)
+		filter.hue = hueInterval * float64(i)
+
+		writeImage(generateImage(&src, filter), dstFilePath)
 	}
 }
 
