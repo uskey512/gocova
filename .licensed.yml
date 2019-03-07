@@ -1,0 +1,6 @@
+name: gocova
+source_path: '.'
+
+sources:
+  go: true
+
